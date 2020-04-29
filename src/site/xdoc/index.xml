@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<document>
+    <properties>
+        <title>Plugin anonymizationphoto</title>
+    </properties>
+    <body>
+        <section name="Plugin anonymizationphoto">
+           <subsection id="presentation" name="Presentation">
+            <p>
+             This plugin anonymizes photos. It calls a service that detects faces on photos and anonymises them.
+             It is possible to perform a preprocessing on the photo before its anonymization and a postprocessing on an annymized photo.
+             The plugin contains a back office screen for viewing photo anonymization statistics. 
+            </p>
+           </subsection>
+           
+           <subsection id="how" name="How to use it">
+             <p>
+               <b>Simple mode</b>
+			 </p>
+			 <p>
+			     To anonymized a photo call method "callServiceAnonymization" from service AnonymizationPhotoCallService. 
+			     The photo to anonymized must be pass in the PhotoToAnonymized object. The anonymized photo will be return in ResponseAnonymizationPhoto object.
+			 </p>
+			 <p>
+               <code type="java">
+                 public ResponseAnonymizationPhoto callServiceAnonymization( PhotoToAnonymized photoToAnonymized )
+               </code>
+             </p>
+             <p>
+               <b>Daemon mode</b>
+			 </p>
+			 <p>
+			   The plugin contains a Lutece daemon which anonynmize a list of photos.
+			   To use the daemon mode is required to implements the method loadPhotos from interface IAnonymizationPhotoDAO.This method will provide the list of photo to anonymized.
+			    <code type="java">
+                  public List&lt;PhotoToAnonymized&gt; loadPhotos( );
+               </code>
+			 </p>
+			 <p>
+			   <ul>Optionnal : you can implements one of these methods from the interface IAnonymizationPhotoService : </ul>
+			   <li><code type="java">default void preTreatment( List&lt;PhotoToAnonymized&gt; listPhoto )</code> to make a pre operation on photos before anonymized them</li>
+			   <li><code type="java">default void postTreatment( ResponseAnonymizationPhoto responseAnonymizationPhoto )</code> to make a post operation on anonymized photos</li>
+			 </p>
+           </subsection>
+           
+           <subsection id="properties" name="File anonymizationphoto.properties description">
+             <p>
+			  <ul>
+               <li><b>anonymizationphoto.daemon.max.photo : </b> maximum number of photos anonymized in daemon mode.</li>
+               <li><b>anonymizationphoto.anonymization.service.url : </b> URL of the anonymization service.</li>
+               <li><b>anonymizationphoto.application.code : </b> application code to identify which application use anonymization service</li>
+              </ul>			   
+             </p>
+           </subsection> 
+        </section>
+    </body>
+</document>

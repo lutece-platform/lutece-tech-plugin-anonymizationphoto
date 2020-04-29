@@ -1,0 +1,29 @@
+<@rowBox>
+	<@boxBody>
+		 <@table>
+          <tr>
+            <th id="idresource">#i18n{anonymizationphoto.adminFeature.stat.columnIdResource}</th>
+            <th id="date">#i18n{anonymizationphoto.adminFeature.stat.columnDate}</th>
+            <th id="duration">#i18n{anonymizationphoto.adminFeature.stat.columnDuration}</th>
+			<th id="face">#i18n{anonymizationphoto.adminFeature.stat.columnFaceDetected}</th>
+          </tr>
+          <@tableHeadBodySeparator />
+          <#list listStatsAnonymization as stat >
+           <tr>
+            <td>
+                ${stat.idResource}
+            </td>
+			<td>
+                ${stat.dateAnonymized}
+            </td>
+			<td>
+                ${stat.elapsedTimeSeconde}
+            </td>
+			<td>
+                ${stat.nbFacesDetected}
+            </td>
+           </tr>
+          </#list>
+         </@table>
+   </@boxBody>
+</@rowBox>
