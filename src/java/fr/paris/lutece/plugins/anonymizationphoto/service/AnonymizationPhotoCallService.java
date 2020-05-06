@@ -37,12 +37,13 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
+import javax.inject.Inject;
+
 import org.apache.commons.lang.StringUtils;
 
 import fr.paris.lutece.plugins.anonymizationphoto.business.AnonymizationPhotoStatsDAO;
 import fr.paris.lutece.plugins.anonymizationphoto.business.PhotoToAnonymized;
 import fr.paris.lutece.plugins.anonymizationphoto.business.ResponseAnonymizationPhoto;
-import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.httpaccess.HttpAccess;
@@ -65,7 +66,8 @@ public class AnonymizationPhotoCallService
     private static final String BASE64 = ";base64,";
     private static final String DEFAULT_MIME_TYPE = "data:image/jpg";
 
-    private AnonymizationPhotoStatsDAO _anonymizationPhotoStatsDao = SpringContextService.getBean( "anonymizationPhotoStatsDAO" );
+    @Inject
+    private AnonymizationPhotoStatsDAO _anonymizationPhotoStatsDao;// = SpringContextService.getBean( "anonymizationPhotoStatsDAO" );
 
     /**
      * Call Service to anonymized photo.

@@ -33,6 +33,7 @@
  */
 package fr.paris.lutece.plugins.anonymizationphoto.business;
 
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -112,7 +113,7 @@ public class AnonymizationPhotoStatsDAO
             int nIndex = 1;
             daoUtil.setLong( nIndex++, newPrimaryKey( ) );
             daoUtil.setInt( nIndex++, response.getIdResource( ) );
-            daoUtil.setDate( nIndex++, DateUtil.formatDateSql( DateUtil.getCurrentDateString( Locale.FRENCH ), Locale.FRENCH ) );
+            daoUtil.setTimestamp( nIndex++, new Timestamp( System.currentTimeMillis( ) ) );
             daoUtil.setString( nIndex++, response.getElapsedTimeSeconde( ) );
             daoUtil.setInt( nIndex, response.getNbFacesDetected( ) );
             daoUtil.executeUpdate( );
