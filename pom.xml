@@ -67,5 +67,12 @@
 		</dependency>
 
 	</dependencies>
+	
+	<scm>
+		<connection>scm:git:https://github.com/lutece-platform/lutece-tech-plugin-anonymizationphoto.git</connection>
+		<developerConnection>scm:https://github.com/lutece-platform/lutece-tech-plugin-anonymizationphoto.git</developerConnection>
+		<url>https://github.com/lutece-platform/lutece-tech-plugin-anonymizationphoto.git</url>
+		<tag>HEAD</tag>
+  </scm>
 
 </project>
