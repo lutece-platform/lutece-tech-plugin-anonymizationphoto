@@ -3,3 +3,9 @@
 /.project
 /.classpath
 /.settings/
+target/
+logs/
+java.io.tmpdir/
+.migration/
+*.log
+e2e/

@@ -33,74 +33,115 @@
  */
 package fr.paris.lutece.plugins.anonymizationphoto.service;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
 
-import org.junit.Test;
-import org.junit.runner.RunWith;
-import org.mockito.Mockito;
-import org.powermock.api.mockito.PowerMockito;
-import org.powermock.api.support.membermodification.MemberMatcher;
-import org.powermock.core.classloader.annotations.PrepareForTest;
-import org.powermock.modules.junit4.PowerMockRunner;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.jupiter.api.Test;
 
 import fr.paris.lutece.plugins.anonymizationphoto.business.AnonymizationPhotoStatsDAO;
 import fr.paris.lutece.plugins.anonymizationphoto.business.PhotoToAnonymized;
 import fr.paris.lutece.plugins.anonymizationphoto.business.ResponseAnonymizationPhoto;
-import fr.paris.lutece.portal.service.spring.SpringContextService;
-import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import fr.paris.lutece.test.LuteceTestCase;
+import fr.paris.lutece.test.ReflectionTestUtils;
 import fr.paris.lutece.util.httpaccess.HttpAccessException;
+import jakarta.enterprise.inject.Vetoed;
 
-@RunWith( PowerMockRunner.class )
-@PrepareForTest( {
-        AppPropertiesService.class, SpringContextService.class, AnonymizationPhotoCallService.class
-} )
-public class AnonymizationPhotoCallServiceTest
+/**
+ * Tests the call to the anonymization service.
+ */
+public class AnonymizationPhotoCallServiceTest extends LuteceTestCase
 {
+    private static final String JSON_RESPONSE_VALUE = "{\"app_code\":\"AppCode\",\"anonymized_photo\":\"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAEAAAAAAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7UooorM9A/9k=\",\"total_nb_faces\": 3,\"elapsed_time_in_seconds\": 34.87054681777954}";
 
+    /**
+     * A valid response is parsed and its statistic saved.
+     */
     @Test
-    public void testCallServiceAnonymization( ) throws Exception
+    public void testCallServiceAnonymization( )
     {
+        RecordingStatsDAO dao = new RecordingStatsDAO( );
+        AnonymizationPhotoCallService service = new AnonymizationPhotoCallService( )
+        {
+            @Override
+            String callRestWs( PhotoToAnonymized photoToAnonymized )
+            {
+                return JSON_RESPONSE_VALUE;
+            }
+        };
+        ReflectionTestUtils.setField( service, AnonymizationPhotoCallService.class, "_anonymizationPhotoStatsDao", dao, AnonymizationPhotoStatsDAO.class );
 
-        // init mock
-        PowerMockito.mockStatic( AppPropertiesService.class );
-        Mockito.when( AppPropertiesService.getProperty( "anonymizationphoto.anonymization.service.url" ) ).thenReturn( "fakeUrl" );
-        Mockito.when( AppPropertiesService.getProperty( "anonymizationphoto.application.code" ) ).thenReturn( "fakeCode" );
+        ResponseAnonymizationPhoto response = service.callServiceAnonymization( photo( ) );
 
-        AnonymizationPhotoStatsDAO mockDao = Mockito.mock( AnonymizationPhotoStatsDAO.class );
-        Mockito.doNothing( ).when( mockDao ).insert( ( Mockito.any( ResponseAnonymizationPhoto.class ) ) );
-        PowerMockito.mockStatic( SpringContextService.class );
-        Mockito.when( SpringContextService.getBean( "anonymizationPhotoStatsDAO" ) ).thenReturn( mockDao );
-
-        // run test
-        PhotoToAnonymized photoToAnonymized = new PhotoToAnonymized( );
-        photoToAnonymized.setIdResourceAnonymized( 1 );
-        AnonymizationPhotoCallService spyAnonymizationPhotoCallService = PowerMockito.spy( new AnonymizationPhotoCallService( ) );
-        PowerMockito.doReturn( jsonResponse( ) )
-                .when( spyAnonymizationPhotoCallService, MemberMatcher.method( AnonymizationPhotoCallService.class, "callRestWs", PhotoToAnonymized.class ) )
-                .withArguments( photoToAnonymized );
-        ResponseAnonymizationPhoto response = spyAnonymizationPhotoCallService.callServiceAnonymization( photoToAnonymized );
-
-        // assert
         assertNotNull( response );
+        assertNull( response.getErrorMessage( ) );
         assertEquals( 1, response.getIdResource( ) );
         assertNotNull( response.getPhotoAnonymized( ) );
         assertEquals( 3, response.getNbFacesDetected( ) );
+        assertEquals( "34.87054681777954", response.getElapsedTimeSeconde( ) );
+        assertEquals( 1, dao._listInserted.size( ) );
+    }
 
-        // test exception
-        AnonymizationPhotoCallService spyAnonymizationPhotoCallServiceExeption = PowerMockito.spy( new AnonymizationPhotoCallService( ) );
-        PowerMockito.doThrow( new HttpAccessException( "Exeption", null ) ).when( spyAnonymizationPhotoCallServiceExeption,
-                MemberMatcher.method( AnonymizationPhotoCallService.class, "callRestWs", PhotoToAnonymized.class ) ).withArguments( photoToAnonymized );
-        response = spyAnonymizationPhotoCallServiceExeption.callServiceAnonymization( photoToAnonymized );
+    /**
+     * A failing call returns its error and saves nothing.
+     */
+    @Test
+    public void testCallServiceAnonymizationError( )
+    {
+        RecordingStatsDAO dao = new RecordingStatsDAO( );
+        AnonymizationPhotoCallService service = new AnonymizationPhotoCallService( )
+        {
+            @Override
+            String callRestWs( PhotoToAnonymized photoToAnonymized ) throws HttpAccessException
+            {
+                throw new HttpAccessException( "Exeption", null );
+            }
+        };
+        ReflectionTestUtils.setField( service, AnonymizationPhotoCallService.class, "_anonymizationPhotoStatsDao", dao, AnonymizationPhotoStatsDAO.class );
 
-        // assert
+        ResponseAnonymizationPhoto response = service.callServiceAnonymization( photo( ) );
+
         assertNotNull( response );
         assertEquals( "Exeption", response.getErrorMessage( ) );
+        assertEquals( 0, dao._listInserted.size( ) );
     }
 
-    private String jsonResponse( )
+    /**
+     * Builds the photo sent to the service.
+     *
+     * @return the photo
+     */
+    private static PhotoToAnonymized photo( )
     {
-        return "{'app_code':'AppCode','anonymized_photo':'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD/4QAiRXhpZgAATU0AKgAAAAgAAQESAAMAAAABAAEAAAAAAAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAABAAEDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD7UooorM9A/9k=','total_nb_faces': 3,'elapsed_time_in_seconds': 34.87054681777954}";
+        PhotoToAnonymized photoToAnonymized = new PhotoToAnonymized( );
+        photoToAnonymized.setIdResourceAnonymized( 1 );
+        photoToAnonymized.setPhotoContent( new byte [ ] {
+                1
+        } );
+        return photoToAnonymized;
     }
 
+    /**
+     * Statistics DAO keeping the inserted rows in memory.
+     */
+    @Vetoed
+    private static class RecordingStatsDAO extends AnonymizationPhotoStatsDAO
+    {
+        private final List<ResponseAnonymizationPhoto> _listInserted = new ArrayList<>( );
+
+        /**
+         * Records the statistic.
+         *
+         * @param response
+         *            the statistic
+         */
+        @Override
+        public void insert( ResponseAnonymizationPhoto response )
+        {
+            _listInserted.add( response );
+        }
+    }
 }

@@ -36,19 +36,26 @@ package fr.paris.lutece.plugins.anonymizationphoto.service;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
-import javax.inject.Inject;
+import org.eclipse.microprofile.config.inject.ConfigProperty;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
+
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.ObjectNode;
+
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 
 import fr.paris.lutece.plugins.anonymizationphoto.business.AnonymizationPhotoStatsDAO;
 import fr.paris.lutece.plugins.anonymizationphoto.business.PhotoToAnonymized;
 import fr.paris.lutece.plugins.anonymizationphoto.business.ResponseAnonymizationPhoto;
 import fr.paris.lutece.portal.service.util.AppLogService;
-import fr.paris.lutece.portal.service.util.AppPropertiesService;
 import fr.paris.lutece.util.httpaccess.HttpAccess;
 import fr.paris.lutece.util.httpaccess.HttpAccessException;
-import net.sf.json.JSONObject;
 
 /**
  * Class Service to call abonymization photo service.
@@ -56,18 +63,29 @@ import net.sf.json.JSONObject;
  * @author vincent.corbel
  *
  */
+@ApplicationScoped
 public class AnonymizationPhotoCallService
 {
 
     // PROPERTY
-    private static final String PROPERTY_SERVICE_ANONYMIZATION_URL = AppPropertiesService.getProperty( "anonymizationphoto.anonymization.service.url" );
-    private static final String PROPERTY_APPLICATION_CODE = AppPropertiesService.getProperty( "anonymizationphoto.application.code" );
+    private static final String PROPERTY_SERVICE_ANONYMIZATION_URL = "anonymizationphoto.anonymization.service.url";
+    private static final String PROPERTY_APPLICATION_CODE = "anonymizationphoto.application.code";
 
     private static final String BASE64 = ";base64,";
     private static final String DEFAULT_MIME_TYPE = "data:image/jpg";
 
+    private static final ObjectMapper MAPPER = new ObjectMapper( );
+
     @Inject
-    private AnonymizationPhotoStatsDAO _anonymizationPhotoStatsDao;// = SpringContextService.getBean( "anonymizationPhotoStatsDAO" );
+    private AnonymizationPhotoStatsDAO _anonymizationPhotoStatsDao;
+
+    @Inject
+    @ConfigProperty( name = PROPERTY_SERVICE_ANONYMIZATION_URL )
+    private Optional<String> _strServiceUrl;
+
+    @Inject
+    @ConfigProperty( name = PROPERTY_APPLICATION_CODE )
+    private Optional<String> _strApplicationCode;
 
     /**
      * Call Service to anonymized photo.
@@ -110,8 +128,9 @@ public class AnonymizationPhotoCallService
      * @return webservice response
      *
      * @throws HttpAccessException
+     *             if the webservice call fails
      */
-    private String callRestWs( PhotoToAnonymized photoToAnonymized ) throws HttpAccessException
+    String callRestWs( PhotoToAnonymized photoToAnonymized ) throws HttpAccessException
     {
 
         HttpAccess httpAccess = new HttpAccess( );
@@ -119,12 +138,11 @@ public class AnonymizationPhotoCallService
         headersRequest.put( "Content-Type", "application/json; charset=UTF-8" );
         Map<String, String> headersResponse = new HashMap<>( );
 
-        JSONObject jsonContent = new JSONObject( );
-        jsonContent.accumulate( "photo", transformPhotoToStringBase64( photoToAnonymized ) );
-        jsonContent.accumulate( "app_code", PROPERTY_APPLICATION_CODE );
+        ObjectNode jsonContent = MAPPER.createObjectNode( );
+        jsonContent.put( "photo", transformPhotoToStringBase64( photoToAnonymized ) );
+        jsonContent.put( "app_code", _strApplicationCode.orElse( StringUtils.EMPTY ) );
 
-        // call service anonymization
-        return httpAccess.doPostJSON( PROPERTY_SERVICE_ANONYMIZATION_URL, jsonContent.toString( ), headersRequest, headersResponse );
+        return httpAccess.doPostJSON( _strServiceUrl.orElse( null ), jsonContent.toString( ), headersRequest, headersResponse );
     }
 
     /**
@@ -147,14 +165,16 @@ public class AnonymizationPhotoCallService
      *            response json format
      * @param response
      *            response object
+     * @throws JsonProcessingException
+     *             if the response is not valid JSON
      */
-    private void buildResponseObject( String strReponse, ResponseAnonymizationPhoto response )
+    private void buildResponseObject( String strReponse, ResponseAnonymizationPhoto response ) throws JsonProcessingException
     {
-        JSONObject jsonResponse = JSONObject.fromObject( strReponse );
-        String strBase64Photo = jsonResponse.getString( "anonymized_photo" );
+        JsonNode jsonResponse = MAPPER.readTree( strReponse );
+        String strBase64Photo = jsonResponse.get( "anonymized_photo" ).asText( );
 
-        response.setNbFacesDetected( jsonResponse.getInt( "total_nb_faces" ) );
-        response.setElapsedTimeSeconde( String.valueOf( jsonResponse.getDouble( "elapsed_time_in_seconds" ) ) );
+        response.setNbFacesDetected( jsonResponse.get( "total_nb_faces" ).asInt( ) );
+        response.setElapsedTimeSeconde( String.valueOf( jsonResponse.get( "elapsed_time_in_seconds" ).asDouble( ) ) );
 
         String [ ] array = strBase64Photo.split( BASE64 );
         byte [ ] photoDecode = java.util.Base64.getDecoder( ).decode( array [1] );

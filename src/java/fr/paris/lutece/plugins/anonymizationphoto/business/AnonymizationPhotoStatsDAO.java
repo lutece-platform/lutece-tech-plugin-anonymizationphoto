@@ -40,10 +40,15 @@ import java.util.Locale;
 
 import fr.paris.lutece.util.date.DateUtil;
 import fr.paris.lutece.util.sql.DAOUtil;
+import jakarta.enterprise.context.ApplicationScoped;
 
+/**
+ * DAO of the anonymization statistics.
+ */
+@ApplicationScoped
 public class AnonymizationPhotoStatsDAO
 {
-    private static final String SQL_QUERY_NEW_PK = "SELECT nextval('seq_anonymizationphoto_stats_id')";
+    private static final String SQL_QUERY_NEW_PK = "SELECT MAX( id_stats ) FROM anonymizationphoto_stats";
     private static final String SQL_QUERY_SELECT = "SELECT id_resource_anonymized, date_anonymization, elapsed_time_in_seconds, faces_detected FROM anonymizationphoto_stats ORDER BY id_stats DESC limit 50";
     private static final String SQL_QUERY_INSERT = "INSERT INTO anonymizationphoto_stats ( id_stats, id_resource_anonymized, date_anonymization, elapsed_time_in_seconds, faces_detected ) VALUES ( ?, ?, ?, ?, ? ) ";
 
@@ -52,16 +57,16 @@ public class AnonymizationPhotoStatsDAO
      *
      * @return The new primary key
      */
-    private Long newPrimaryKey( )
+    private long newPrimaryKey( )
     {
         try ( DAOUtil daoUtil = new DAOUtil( SQL_QUERY_NEW_PK ) ; )
         {
             daoUtil.executeQuery( );
-            Long nKey = null;
+            long nKey = 1;
 
             if ( daoUtil.next( ) )
             {
-                nKey = daoUtil.getLong( 1 );
+                nKey = daoUtil.getLong( 1 ) + 1;
             }
 
             return nKey;

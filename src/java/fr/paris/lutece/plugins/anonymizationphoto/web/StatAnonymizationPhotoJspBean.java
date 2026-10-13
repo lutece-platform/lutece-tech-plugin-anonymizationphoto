@@ -33,20 +33,21 @@
  */
 package fr.paris.lutece.plugins.anonymizationphoto.web;
 
-import java.util.HashMap;
-import java.util.Map;
-
-import javax.servlet.http.HttpServletRequest;
-
 import fr.paris.lutece.plugins.anonymizationphoto.business.StatisticsHome;
-import fr.paris.lutece.portal.service.template.AppTemplateService;
+import fr.paris.lutece.portal.util.mvc.admin.MVCAdminJspBean;
 import fr.paris.lutece.portal.util.mvc.admin.annotations.Controller;
 import fr.paris.lutece.portal.util.mvc.commons.annotations.View;
-import fr.paris.lutece.portal.web.admin.PluginAdminPageJspBean;
-import fr.paris.lutece.util.html.HtmlTemplate;
+import fr.paris.lutece.portal.web.cdi.mvc.Models;
+import jakarta.enterprise.context.RequestScoped;
+import jakarta.inject.Named;
 
-@Controller( controllerJsp = "StatAnonymizationPhoto.jsp", controllerPath = "jsp/admin/plugins/anonymizationphoto/", right = "STAT_ANONYMIZATION_MANAGEMENT" )
-public class StatAnonymizationPhotoJspBean extends PluginAdminPageJspBean
+/**
+ * Back office page showing the last photo anonymizations.
+ */
+@RequestScoped
+@Named
+@Controller( controllerJsp = "StatAnonymizationPhoto.jsp", controllerPath = "jsp/admin/plugins/anonymizationphoto/", right = StatAnonymizationPhotoJspBean.RIGHT_STAT_ANONYMIZATION, securityTokenEnabled = true )
+public class StatAnonymizationPhotoJspBean extends MVCAdminJspBean
 {
 
     private static final long serialVersionUID = 1L;
@@ -57,21 +58,27 @@ public class StatAnonymizationPhotoJspBean extends PluginAdminPageJspBean
     // Right
     public static final String RIGHT_STAT_ANONYMIZATION = "STAT_ANONYMIZATION_MANAGEMENT";
 
+    // Properties
+    private static final String PROPERTY_PAGE_TITLE = "anonymizationphoto.adminFeature.stat.anonymizationphoto.name";
+
     // Views
     private static final String VIEW_STAT_ANONYMIZATION = "statAnonymizationPhoto";
 
     // MARK
     private static final String MARK_LIST_STATS_ANONYMIZATION = "listStatsAnonymization";
 
+    /**
+     * Displays the last anonymization statistics.
+     *
+     * @param model
+     *            the model of the page
+     * @return the page
+     */
     @View( value = VIEW_STAT_ANONYMIZATION, defaultView = true )
-    public String getStats( HttpServletRequest request )
+    public String getStats( Models model )
     {
-        Map<String, Object> model = new HashMap<>( );
-
         model.put( MARK_LIST_STATS_ANONYMIZATION, StatisticsHome.loadStatsAnonymization( ) );
 
-        HtmlTemplate t = AppTemplateService.getTemplate( TEMPLATE_STATS_ANONYMIZATION, getLocale( ), model );
-        return getAdminPage( t.getHtml( ) );
-
+        return getPage( PROPERTY_PAGE_TITLE, TEMPLATE_STATS_ANONYMIZATION );
     }
 }

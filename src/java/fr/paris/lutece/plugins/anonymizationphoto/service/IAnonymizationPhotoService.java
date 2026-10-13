@@ -38,6 +38,9 @@ import java.util.List;
 import fr.paris.lutece.plugins.anonymizationphoto.business.PhotoToAnonymized;
 import fr.paris.lutece.plugins.anonymizationphoto.business.ResponseAnonymizationPhoto;
 
+/**
+ * Application treatments around the anonymization, implemented by the application as an {@code @ApplicationScoped} CDI bean.
+ */
 public interface IAnonymizationPhotoService
 {
 

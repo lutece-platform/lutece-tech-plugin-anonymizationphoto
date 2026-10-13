@@ -36,7 +36,7 @@ package fr.paris.lutece.plugins.anonymizationphoto.service.daemon;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import fr.paris.lutece.plugins.anonymizationphoto.business.IAnonymizationPhotoDAO;
 import fr.paris.lutece.plugins.anonymizationphoto.business.PhotoToAnonymized;
@@ -44,23 +44,30 @@ import fr.paris.lutece.plugins.anonymizationphoto.business.ResponseAnonymization
 import fr.paris.lutece.plugins.anonymizationphoto.service.AnonymizationPhotoCallService;
 import fr.paris.lutece.plugins.anonymizationphoto.service.IAnonymizationPhotoService;
 import fr.paris.lutece.portal.service.daemon.Daemon;
-import fr.paris.lutece.portal.service.spring.SpringContextService;
 import fr.paris.lutece.portal.service.util.AppLogService;
 import fr.paris.lutece.portal.service.util.AppPropertiesService;
+import jakarta.enterprise.inject.Instance;
+import jakarta.enterprise.inject.spi.CDI;
 
+/**
+ * Daemon sending the photos provided by the application to the anonymization service.
+ */
 public class AnonymizationPhoto extends Daemon
 {
 
     // PROPERTY
     private static final int PROPERTY_MAX_NUMBER_PHOTOS = AppPropertiesService.getPropertyInt( "anonymizationphoto.daemon.max.photo", 10 );
 
-    private IAnonymizationPhotoService _anonymizationPhotoService = SpringContextService.getBean( "anonymizationPhotoService" );
-    private IAnonymizationPhotoDAO _anonymizationPhotoDao = SpringContextService.getBean( "anonymizationPhotoDAO" );
+    private final Instance<IAnonymizationPhotoService> _anonymizationPhotoServices = CDI.current( ).select( IAnonymizationPhotoService.class );
+    private final Instance<IAnonymizationPhotoDAO> _anonymizationPhotoDaos = CDI.current( ).select( IAnonymizationPhotoDAO.class );
 
-    private AnonymizationPhotoCallService _anonymizationPhotoCallService = SpringContextService.getBean( "anonymizationPhotoCallService" );
+    private final AnonymizationPhotoCallService _anonymizationPhotoCallService = CDI.current( ).select( AnonymizationPhotoCallService.class ).get( );
 
     StringBuilder _sbLogs;
 
+    /**
+     * Loads the photos of the application, sends each one to the anonymization service and hands the results back to the application.
+     */
     @Override
     public void run( )
     {
@@ -68,7 +75,18 @@ public class AnonymizationPhoto extends Daemon
 
         _sbLogs.append( "Anonymization Photo - \n" );
 
-        List<PhotoToAnonymized> listAnonymizationPhoto = _anonymizationPhotoDao.loadPhotos( );
+        if ( !_anonymizationPhotoDaos.isResolvable( ) || !_anonymizationPhotoServices.isResolvable( ) )
+        {
+            String strMessage = ( _anonymizationPhotoDaos.isAmbiguous( ) || _anonymizationPhotoServices.isAmbiguous( ) )
+                    ? "Several application beans implement IAnonymizationPhotoDAO or IAnonymizationPhotoService : nothing anonymized"
+                    : "No application bean implements IAnonymizationPhotoDAO and IAnonymizationPhotoService : nothing to anonymize";
+            AppLogService.info( strMessage );
+            setLastRunLogs( strMessage );
+            return;
+        }
+
+        IAnonymizationPhotoService anonymizationPhotoService = _anonymizationPhotoServices.get( );
+        List<PhotoToAnonymized> listAnonymizationPhoto = _anonymizationPhotoDaos.get( ).loadPhotos( );
 
         if ( ( listAnonymizationPhoto == null ) || listAnonymizationPhoto.isEmpty( ) )
         {
@@ -81,7 +99,7 @@ public class AnonymizationPhoto extends Daemon
             return;
         }
 
-        _anonymizationPhotoService.preTreatment( listAnonymizationPhoto );
+        anonymizationPhotoService.preTreatment( listAnonymizationPhoto );
 
         List<ResponseAnonymizationPhoto> listResponse = new ArrayList<>( );
         for ( PhotoToAnonymized photoToAnonymized : listAnonymizationPhoto )
@@ -90,7 +108,7 @@ public class AnonymizationPhoto extends Daemon
             {
                 ResponseAnonymizationPhoto response = _anonymizationPhotoCallService.callServiceAnonymization( photoToAnonymized );
                 listResponse.add( response );
-                _anonymizationPhotoService.postTreatment( response );
+                anonymizationPhotoService.postTreatment( response );
 
                 if ( StringUtils.isBlank( response.getErrorMessage( ) ) && ( response.getPhotoAnonymized( ) != null ) )
                 {
@@ -103,11 +121,11 @@ public class AnonymizationPhoto extends Daemon
             }
             catch( Exception e )
             {
-                AppLogService.error( "Error processing photo id : " + photoToAnonymized.getlIdResourceAnonymized( ) + "\n" );
+                AppLogService.error( "Error processing photo id : {}", photoToAnonymized.getlIdResourceAnonymized( ), e );
             }
         }
 
-        _anonymizationPhotoService.postTreatment( listResponse );
+        anonymizationPhotoService.postTreatment( listResponse );
 
         AppLogService.info( _sbLogs.toString( ) );
 

@@ -35,6 +35,9 @@ package fr.paris.lutece.plugins.anonymizationphoto.business;
 
 import java.util.List;
 
+/**
+ * Source of the photos to anonymize, implemented by the application as an {@code @ApplicationScoped} CDI bean.
+ */
 public interface IAnonymizationPhotoDAO
 {
 
