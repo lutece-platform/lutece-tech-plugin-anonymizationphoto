@@ -34,12 +34,15 @@ package fr.paris.lutece.plugins.anonymizationphoto.business;
 
 import java.util.List;
 
-import fr.paris.lutece.portal.service.spring.SpringContextService;
+import jakarta.enterprise.inject.spi.CDI;
 
-public class StatisticsHome
+/**
+ * Home of the anonymization statistics.
+ */
+public final class StatisticsHome
 {
 
-    private static AnonymizationPhotoStatsDAO _anonymizationPhotoStatsDao = SpringContextService.getBean( "anonymizationPhotoStatsDAO" );
+    private static AnonymizationPhotoStatsDAO _anonymizationPhotoStatsDao = CDI.current( ).select( AnonymizationPhotoStatsDAO.class ).get( );
 
     /**
      * Private constructor.
@@ -49,6 +52,11 @@ public class StatisticsHome
         // Empty constructor
     }
 
+    /**
+     * Loads the last anonymization statistics.
+     *
+     * @return the statistics, newest first
+     */
     public static List<ResponseAnonymizationPhoto> loadStatsAnonymization( )
     {
         return _anonymizationPhotoStatsDao.load( );

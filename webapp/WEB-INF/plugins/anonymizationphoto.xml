@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?><plug-in>
 	<name>anonymizationphoto</name>
-	<class>fr.paris.lutece.portal.service.plugin.PluginDefaultImplementation
-	</class>
-	<version>1.0.1-SNAPSHOT</version>
+	<class>fr.paris.lutece.portal.service.plugin.PluginDefaultImplementation</class>
+	<version>2.0.0-SNAPSHOT</version>
 	<documentation/>
 	<installation/>
 	<changes/>
@@ -15,18 +14,9 @@
 	<db-pool-required>0</db-pool-required>
 
 	<core-version-dependency>
-		<min-core-version>6.0.1</min-core-version>
+		<min-core-version>8.0.0</min-core-version>
 		<max-core-version/>
 	</core-version-dependency>
-
-	<css-stylesheets>
-		<css-stylesheets-scope>portal</css-stylesheets-scope>
-		<css-stylesheet>forms/forms.css</css-stylesheet>
-	</css-stylesheets>
-
-	<admin-css-stylesheets>
-		<admin-css-stylesheet>css/admin/plugins/forms/forms.css</admin-css-stylesheet>
-	</admin-css-stylesheets>
 
     <daemons>
 	 <daemon>
@@ -40,10 +30,12 @@
 	<!--Administration interface parameters -->
 	<admin-features>
 		<admin-feature>
-			<feature-id>STAT_ANONYMIZATION_PHOTO</feature-id>
+			<feature-id>STAT_ANONYMIZATION_MANAGEMENT</feature-id>
 			<feature-title>anonymizationphoto.adminFeature.stat.anonymizationphoto.name</feature-title>
-			<feature-description>archivagedansmarue.adminFeature.stat.anonymizationphoto.description</feature-description>
-			<feature-level>3</feature-level>
+			<feature-description>anonymizationphoto.adminFeature.stat.anonymizationphoto.description</feature-description>
+			<feature-level>2</feature-level>
+			<feature-group>APPLICATIONS</feature-group>
+			<icon-url>ti ti-face-id</icon-url>
 			<feature-url>jsp/admin/plugins/anonymizationphoto/StatAnonymizationPhoto.jsp</feature-url>
 		</admin-feature>
 	</admin-features>
